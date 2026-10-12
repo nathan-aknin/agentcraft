@@ -91,6 +91,6 @@ describe('engine config', () => {
     expect(load(['--codex-model', 'gpt-x', '--codex-lead-model', 'gpt-y', '--codex-effort', 'high']).codex).toMatchObject({ leadModel: 'gpt-y', workerModel: 'gpt-x', effort: 'high', leadEffort: 'high' });
     expect(() => load(['--worker-engine', 'gemini'])).toThrow(/unknown worker engine "gemini"/);
     expect(() => load(['--engines', 'kit'])).toThrow(/engine for kit/);
-    expect(() => load(['--backend', 'cursor'])).toThrow(/use sim, claude or codex/);
+    expect(() => load(['--backend', 'cursor'])).toThrow(/use sim, claude, codex or opencode/);
   });
 });

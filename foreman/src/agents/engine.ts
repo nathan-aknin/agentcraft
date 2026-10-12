@@ -5,8 +5,8 @@
 import type { ChildProcess } from 'node:child_process';
 import type { AgentTool, TurnHandle } from './tools.js';
 
-export type EngineId = 'claude' | 'codex';
-export const ENGINE_IDS: readonly EngineId[] = ['claude', 'codex'];
+export type EngineId = 'claude' | 'codex' | 'opencode';
+export const ENGINE_IDS: readonly EngineId[] = ['claude', 'codex', 'opencode'];
 export type Role = 'lead' | 'worker';
 
 export interface TurnStats {

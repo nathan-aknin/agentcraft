@@ -66,16 +66,16 @@ public final class Nameplate {
 		if (v.model != null && !v.model.isBlank()) {
 			return v.model;
 		}
-		return "codex".equals(v.engine) ? "Codex" : "claude".equals(v.engine) ? "Claude" : v.engine;
+		return "opencode".equals(v.engine) ? "OpenCode" : "codex".equals(v.engine) ? "Codex" : "claude".equals(v.engine) ? "Claude" : v.engine;
 	}
 
-	/** Chip colours by engine: Claude in clay, Codex in OpenAI's black and white. */
+	/** Chip colours by engine: Claude in clay, Codex in OpenAI's black and white, opencode in its own warm tone. */
 	private static int chipBg(@org.jspecify.annotations.Nullable String engine) {
-		return "codex".equals(engine) ? 0xFFEDEDED : 0xFFD97757;
+		return "opencode".equals(engine) ? 0xFFCA8059 : "codex".equals(engine) ? 0xFFEDEDED : 0xFFD97757;
 	}
 
 	private static int chipFg(@org.jspecify.annotations.Nullable String engine) {
-		return "codex".equals(engine) ? 0xFF0D0D0D : 0xFF2A170E;
+		return "opencode".equals(engine) ? 0xFF1B120C : "codex".equals(engine) ? 0xFF0D0D0D : 0xFF2A170E;
 	}
 
 	private Nameplate() {

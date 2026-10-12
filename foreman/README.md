@@ -1,9 +1,9 @@
 # AgentCraft Foreman
 
-The Foreman is the brain of AgentCraft: a Node 22 + TypeScript service that runs a team of Claude
-agents (one lead, up to five workers) on a real git repo and streams everything to the Minecraft
-mod over a WebSocket. The game is only a view. The Foreman owns all state, keeps working while
-Minecraft is closed, and survives restarts.
+The Foreman is the brain of AgentCraft: a Node 22 + TypeScript service that runs a team of AI coding
+agents (Claude, Codex or OpenCode; one lead, up to five workers) on a real git repo and streams
+everything to the Minecraft mod over a WebSocket. The game is only a view. The Foreman owns all
+state, keeps working while Minecraft is closed, and survives restarts.
 
 ```
                      ws://127.0.0.1:7878  (protocol v1, docs/protocol.md)
@@ -20,7 +20,9 @@ Minecraft is closed, and survives restarts.
      |- Notifier      src/notifier.ts    desktop notification + console bell when you are needed
      |- Store         src/store.ts       atomic JSON state + JSONL logs under AGENTCRAFT_HOME
      `- Backend       claude: src/agents/claude/  (Claude Agent SDK sessions)
-                      sim:    src/agents/sim/     (deterministic scripted team, real git)
+                      codex:  src/agents/codex/    (one `codex app-server` per turn)
+                      opencode: src/agents/opencode/ (one `opencode serve` per turn)
+                      sim:    src/agents/sim/       (deterministic scripted team, real git)
 ```
 
 ## Run it
@@ -36,6 +38,8 @@ npm run start -- --backend claude --repo C:\path\to\your\repo --use-claude-login
 # Codex agents on your Codex login (`codex login`), or a mixed team
 npm run start -- --backend codex --repo C:\path\to\your\repo
 npm run start -- --backend claude --worker-engine codex --repo C:\path\to\your\repo
+# OpenCode agents on your opencode setup (`opencode auth login`), or any mix of engines
+npm run start -- --backend opencode --repo C:\path\to\your\repo
 
 # simulated team on a fresh sandbox repo (no API calls) - for demos and screenshot QA
 npm run start -- --backend sim --reset --speed 2
@@ -74,11 +78,13 @@ most ~100 ms of state, and interrupted agent turns resume on the next start.
 
 | flag / env | default | |
 | --- | --- | --- |
-| `--backend sim\|claude\|codex` / `AGENTCRAFT_BACKEND` | `claude` | codex: an all-Codex team |
-| `--lead-engine` / `--worker-engine` `claude\|codex` | the backend's | mixed teams, e.g. a Claude lead with Codex workers |
+| `--backend sim\|claude\|codex\|opencode` / `AGENTCRAFT_BACKEND` | `claude` | codex/opencode: an all-Codex/all-OpenCode team |
+| `--lead-engine` / `--worker-engine` `claude\|codex\|opencode` | the backend's | mixed teams, e.g. a Claude lead with Codex or OpenCode workers |
 | `--engines kit=codex,...` / `AGENTCRAFT_ENGINES` | | engine per agent |
 | `--codex-model`, `--codex-lead-model`, `--codex-worker-model`, `--codex-effort` | your Codex config | Codex models and reasoning effort |
 | `--codex-path` / `AGENTCRAFT_CODEX_PATH` | `codex` on PATH, else the Codex app's | the Codex CLI |
+| `--opencode-model`, `--opencode-lead-model`, `--opencode-worker-model` | your opencode config | OpenCode models, as `provider/model` |
+| `--opencode-path` / `AGENTCRAFT_OPENCODE_PATH` | `opencode` on PATH | the opencode CLI |
 | `--port` / `AGENTCRAFT_PORT` | `7878` | WebSocket port (127.0.0.1 only) |
 | `--home` / `AGENTCRAFT_HOME` | `~/.agentcraft` | state root |
 | `--user-name` / `AGENTCRAFT_USER_NAME` / config `userName` | OS user name | how the agents address you; sent to the mod in `foreman.status` |
@@ -86,7 +92,7 @@ most ~100 ms of state, and interrupted agent turns resume on the next start.
 | `--repo <path>[,<path>]` | | register repos at start (sim: a fresh `sandbox/sim-demo`) |
 | `--goal "<text>"` | | submit a goal right away |
 | `--reset` | | wipe this profile first |
-| `--notify` / `--no-notify` / `AGENTCRAFT_NOTIFY` | on for claude, off for sim | Windows, macOS or Linux (`notify-send`) notifications |
+| `--notify` / `--no-notify` / `AGENTCRAFT_NOTIFY` | on except sim | Windows, macOS or Linux (`notify-send`) notifications |
 | `--toast-silent` | | toast without sound |
 | `--model`, `--lead-model`, `--worker-model` | lead `opus`, workers `sonnet` | any model id/alias the CLI accepts |
 | `--effort low..max` | `medium` | |
@@ -107,7 +113,7 @@ so launch scripts can find it; `<home>/foreman.json` holds the same for the firs
 it exits, another live profile takes its place). A second Foreman on a profile that is already
 running is refused (two would both write its `state.json`).
 
-## Engines: Claude and Codex
+## Engines: Claude, Codex and OpenCode
 
 The team (`src/agents/team.ts`: task graph, worktrees, scheduling, CI, reviews, merges, steering,
 restarts) runs each agent turn through an engine, chosen per agent:
@@ -141,9 +147,19 @@ restarts) runs each agent turn through an engine, chosen per agent:
   saving its changes clears those stale permissions. Do not reset permissions on the whole repo.
   Windows agents are also told to use `npm.cmd` / `npx.cmd`: their PowerShell launchers can fail
   on sandbox-inaccessible global installs or script execution policy, while the CMD launchers work.
+- **OpenCode** (`src/agents/opencode/`): one `opencode serve` process per turn, its HTTP + SSE API
+  (`/session`, `/event`, `/permission`) on a private loopback port. The agent's session is durable,
+  so its next turn resumes it in a fresh process. The team tools (and only the tools an AgentCraft
+  agent should use) travel in an inline config (`OPENCODE_CONFIG_CONTENT`): the native
+  `question`/`task`/`webfetch`/`websearch` tools are switched off, and the team tools are a local
+  MCP server (`mcp-bridge.mjs`) that the engine spawns and answers in-process. Every edit and
+  command raises a permission ask, which goes through the same policy and in-game prompts as the
+  other engines (reads and the board are free). The user's own opencode config still merges in;
+  their other MCP servers are not disconnected yet, and the model defaults to whatever `opencode
+  auth login` set up unless `--opencode-model` overrides it.
 
-The rest of this section describes the team with either engine ("Read/Grep/Glob" is how a Codex
-agent reads with its shell).
+The rest of this section describes the team with any engine ("Read/Grep/Glob" is how a Codex or
+OpenCode agent reads with its shell).
 
 ## How the claude backend works
 
@@ -354,8 +370,8 @@ The repo id is the demo dir name: `sim-demo-showcase` / `sim-demo-showcase-late`
 
 ```sh
 npm test            # vitest: protocol, task graph, persistence, decisions, repos/merges, policy,
-                    #         git push block, WS + full sim run, showcase states, claude
-                    #         orchestration, restart recovery and steering (fake SDK)
+                    #         git push block, WS + full sim run, showcase states, claude / codex /
+                    #         opencode orchestration, restart recovery and steering (fake SDK/servers)
 npx tsc --noEmit
 npm run check       # all of the above + protocol doc freshness
 ```
@@ -366,5 +382,6 @@ npm run check       # all of the above + protocol doc freshness
 - **`profile "claude" is in use by the Foreman pid N`**: that profile already has a running Foreman; stop it or use `--profile`.
 - **`... is not a repository root`**: `/repo add` the repository's top folder (the message names it).
 - **Banner says auth failed**: set `ANTHROPIC_API_KEY` (or a cloud provider switch) and restart the Foreman. With `--use-claude-login`: run `claude` and `/login`. The sim backend works without auth. Why the claude.ai login is opt-in: Anthropic does not allow third-party tools to offer it ([Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview)); see `src/agents/claude/auth.ts`.
+- **OpenCode banner says no provider connected**: run `opencode auth login` (pick a provider), confirm `opencode` works on its own, then restart the Foreman.
 - **Merge refused: uncommitted changes**: commit or stash in your checkout, then choose Merge again (the decision re-opened).
 - **Reset the demo repo**: `node sandbox/create-demo.mjs --force`.

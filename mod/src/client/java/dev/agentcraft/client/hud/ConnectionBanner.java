@@ -99,6 +99,7 @@ public final class ConnectionBanner implements HudElement {
 			case SIM -> fs.speed() != null && fs.speed() != 1.0 ? "sim ×" + trim(fs.speed()) : "sim";
 			case CLAUDE -> "claude";
 			case CODEX -> "codex";
+			case OPENCODE -> "opencode";
 			default -> fs.backend().wire();
 		};
 	}
@@ -135,6 +136,7 @@ public final class ConnectionBanner implements HudElement {
 	private static void drawAuthBanner(GuiGraphicsExtractor g, Font font, ForemanStatus fs) {
 		String head = switch (fs.backend()) {
 			case CODEX -> "Codex backend can't authenticate";
+			case OPENCODE -> "OpenCode backend can't authenticate";
 			case CLAUDE -> "Claude backend can't authenticate";
 			default -> "Agent backend can't authenticate";
 		};

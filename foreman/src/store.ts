@@ -28,7 +28,7 @@ export interface SessionRecord {
   sessionId?: string;
   model?: string;
   /** the engine whose session this is (absent: claude, from before engines) */
-  engine?: 'claude' | 'codex';
+  engine?: 'claude' | 'codex' | 'opencode';
   turns: number;
   costUsd: number;
   updatedAt: number;

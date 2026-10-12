@@ -5,15 +5,18 @@ import type { Foreman } from '../foreman.js';
 import { ClaudeEngine } from './claude/engine.js';
 import { CodexEngine } from './codex/engine.js';
 import type { Engine } from './engine.js';
+import { OpenCodeEngine } from './opencode/engine.js';
 import { TeamBackend } from './team.js';
 
 export function createTeam(fm: Foreman, cfg: Config): TeamBackend {
   let claude: ClaudeEngine | undefined;
   let codex: CodexEngine | undefined;
-  const engine = (n: EngineName): Engine => (n === 'codex' ? (codex ??= new CodexEngine(fm, cfg.codex)) : (claude ??= new ClaudeEngine(fm, cfg.claude)));
+  let opencode: OpenCodeEngine | undefined;
+  const engine = (n: EngineName): Engine =>
+    n === 'codex' ? (codex ??= new CodexEngine(fm, cfg.codex)) : n === 'opencode' ? (opencode ??= new OpenCodeEngine(fm, cfg.opencode)) : (claude ??= new ClaudeEngine(fm, cfg.claude));
   const byAgent = Object.fromEntries(Object.entries(cfg.engines.byAgent).map(([agent, n]) => [agent, engine(n)]));
   return new TeamBackend(fm, cfg.claude, {
-    name: cfg.backend === 'codex' ? 'codex' : 'claude',
+    name: cfg.backend === 'sim' ? 'claude' : cfg.backend,
     engines: { lead: engine(cfg.engines.lead), worker: engine(cfg.engines.worker), byAgent },
   });
 }
