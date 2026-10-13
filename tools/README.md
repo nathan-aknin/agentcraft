@@ -10,6 +10,7 @@ Linux install your distribution's Java 25 JDK (Arch: `pacman -S jdk25-openjdk`) 
 node tools/unix.mjs launch --backend sim            # free simulated team
 node tools/unix.mjs stop --profile sim
 node tools/unix.mjs launch --repo /path/to/repo --use-claude-login
+node tools/unix.mjs launch --backend opencode --repo /path/to/repo   # OpenCode agents (`opencode auth login`)
 node tools/unix.mjs stop                           # save/quit game, stop Foreman
 ```
 
@@ -49,6 +50,7 @@ and Fabric by itself. Java 25 must be installed (Temurin 25: https://adoptium.ne
 tools\launch.ps1                              # claude backend, state in ~/.agentcraft, Foreman :7878, DevBridge :7879
 tools\launch.ps1 -Repo C:\code\life-tracker   # also register a repo with the Foreman
 tools\launch.ps1 -Backend sim                 # scripted demo team (no API calls), demo repo in sandbox/
+tools\launch.ps1 -Backend opencode            # OpenCode agents on your opencode login (`opencode auth login`)
 tools\launch.ps1 -Showcase                    # static showcase state (sim); -Showcase late for the later one
 tools\stop.ps1                                # stop what launch.ps1 started (game + Foreman)
 tools\stop.ps1 -Game                          # just the game: agents keep working, relaunch any time
@@ -70,7 +72,7 @@ If the game of this checkout is already running it is reused (one client per che
 
 | parameter | default | |
 | --- | --- | --- |
-| `-Backend sim\|claude` | `claude` (`AGENTCRAFT_BACKEND`) | `-Showcase` implies `sim` |
+| `-Backend sim\|claude\|codex\|opencode` | `claude` (`AGENTCRAFT_BACKEND`) | `-Showcase` implies `sim` |
 | `-Repo <path>[,<path>]` | | registered at start, or sent as `repo.add` to a running Foreman |
 | `-Profile <name>` | backend name; `showcase` / `showcase-late` | state lives in `<home>/<profile>` |
 | `-Showcase [busy\|late]` | | hold a static scripted state (QA screenshots); always a fresh (`--reset`) profile |

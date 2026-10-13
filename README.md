@@ -228,6 +228,21 @@ checked by AgentCraft's policy (and asked in game when it needs you), the lead's
 `--codex-model`, and mix engines per agent with `--engines kit=codex,wren=claude`. Every agent's nameplate shows the
 model it runs, like **Opus 5.5** or **GPT-6 Astra**, so a mixed team is easy to read at a glance.
 
+**OpenCode.** AgentCraft also runs OpenCode agents. With the OpenCode CLI installed and logged in
+(`opencode auth login`):
+
+```powershell
+tools\launch.ps1 -Backend opencode -Repo C:\path\to\your\repo                       # an all-OpenCode team
+tools\launch.ps1 -Repo C:\path\to\your\repo -ForemanArgs '--worker-engine','opencode'   # Claude lead, OpenCode workers
+```
+
+OpenCode agents live in the same studio and follow the same rules: their own git worktrees, every
+edit and command checked by AgentCraft's policy (and asked in game when it needs you), the lead's
+review, and your **Merge**. The native question, task, fetch and search tools are switched off and the
+team tools arrive as a local MCP server; your own opencode config still merges in. Pick models in
+`provider/model` form with `--opencode-model`, and mix engines per agent with
+`--engines kit=opencode,wren=claude`.
+
 **Your name.** The agents call you by your OS user name. Change it with
 `-ForemanArgs '--user-name','Sam'`, `AGENTCRAFT_USER_NAME`, or `{"userName": "Sam"}` in
 `~/.agentcraft/config.json`.
