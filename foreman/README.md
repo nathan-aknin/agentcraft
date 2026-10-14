@@ -149,12 +149,13 @@ restarts) runs each agent turn through an engine, chosen per agent:
   on sandbox-inaccessible global installs or script execution policy, while the CMD launchers work.
 - **OpenCode** (`src/agents/opencode/`): one `opencode serve` process per turn, its HTTP + SSE API
   (`/session`, `/event`, `/permission`) on a private loopback port. The agent's session is durable,
-  so its next turn resumes it in a fresh process. The team tools (and only the tools an AgentCraft
-  agent should use) travel in an inline config (`OPENCODE_CONFIG_CONTENT`): the native
-  `question`/`task`/`webfetch`/`websearch` tools are switched off, and the team tools are a local
-  MCP server (`mcp-bridge.mjs`) that the engine spawns and answers in-process. Every edit and
-  command raises a permission ask, which goes through the same policy and in-game prompts as the
-  other engines (reads and the board are free). The user's own opencode config still merges in;
+  so its next turn resumes it in a fresh process. An inline config (`OPENCODE_CONFIG_CONTENT`) sets
+  the permissions (`edit`/`bash` ask) and any `--opencode-model` override, and switches off the
+  native `question`/`task`/`webfetch`/`websearch` tools; the team tools (and only the tools an
+  AgentCraft agent should use) are registered as an MCP server over opencode's experimental MCP
+  API (`/experimental/mcp`), an HTTP server the engine runs in-process and answers directly. Every
+  edit and command raises a permission ask, which goes through the same policy and in-game prompts
+  as the other engines (reads and the board are free). The user's own opencode config still merges in;
   their other MCP servers are not disconnected yet, and the model defaults to whatever `opencode
   auth login` set up unless `--opencode-model` overrides it.
 
